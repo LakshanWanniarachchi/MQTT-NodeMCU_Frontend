@@ -1,6 +1,6 @@
 "use client";
 
-import React, { PureComponent } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   LineChart,
   Line,
@@ -8,176 +8,119 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
-  Brush,
-  AreaChart,
-  Area,
   ResponsiveContainer,
 } from "recharts";
 
-const data = [
-  {
-    name: "Page A",
-    uv: 4000,
-    pv: 2400,
-    amt: 2400,
-  },
-  {
-    name: "Page B",
-    uv: 3000,
-    pv: 1398,
-    amt: 2210,
-  },
-  {
-    name: "Page C",
-    uv: 2000,
-    pv: 9800,
-    amt: 2290,
-  },
-  {
-    name: "Page D",
-    uv: 2780,
-    pv: 3908,
-    amt: 2000,
-  },
-  {
-    name: "Page E",
-    uv: 1890,
-    pv: 4800,
-    amt: 2181,
-  },
-  {
-    name: "Page F",
-    uv: 2390,
-    pv: 3800,
-    amt: 2500,
-  },
-  {
-    name: "Page G",
-    uv: 3490,
-    pv: 4300,
-    amt: 2100,
-  },
-];
-
-export default class Example extends PureComponent {
-  static demoUrl =
-    "https://codesandbox.io/p/sandbox/synchronized-line-charts-37rhmf";
-
-  render() {
-    return (
-      <div
-        style={{
-          width: "100%",
-          backgroundColor: "#121212",
-          color: "#FFFFFF",
-          padding: "20px",
-          borderRadius: "10px",
-        }}
-      >
-        <h4 style={{ color: "#FFFFFF" }}>A demo of synchronized AreaCharts</h4>
-
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart
-            width={500}
-            height={200}
-            data={data}
-            syncId="anyId"
-            margin={{
-              top: 10,
-              right: 30,
-              left: 0,
-              bottom: 0,
+const Example = ({ data }) => {
+  return (
+    <div
+      style={{
+        width: "100%",
+        backgroundColor: "#121212",
+        color: "#FFFFFF",
+        padding: "20px",
+        borderRadius: "10px",
+      }}
+    >
+      <h4 style={{ color: "#FFFFFF" }}>Real-Time Distance vs Time</h4>
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart
+          data={data}
+          margin={{
+            top: 10,
+            right: 30,
+            left: 0,
+            bottom: 0,
+          }}
+        >
+          <CartesianGrid stroke="#444" />
+          <XAxis
+            dataKey="timestamp"
+            stroke="#FFFFFF"
+            tickFormatter={(tick) => new Date(tick).toLocaleTimeString()} // Format timestamp to HH:mm:ss
+          />
+          <YAxis stroke="#FFFFFF" />
+          <Tooltip
+            labelFormatter={(label) =>
+              `Time: ${new Date(label).toLocaleTimeString()}`
+            }
+            contentStyle={{
+              backgroundColor: "#333",
+              border: "none",
+              borderRadius: "5px",
+              color: "#FFFFFF",
             }}
-          >
-            <CartesianGrid stroke="#444" />
-            <XAxis dataKey="name" stroke="#FFFFFF" />
-            <YAxis stroke="#FFFFFF" />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "#333",
-                border: "none",
-                borderRadius: "5px",
-                color: "#FFFFFF",
-              }}
-            />
-            <Line
-              type="monotone"
-              dataKey="uv"
-              stroke="#8884d8"
-              fill="#8884d8"
-            />
-          </LineChart>
-        </ResponsiveContainer>
-        <p style={{ color: "#AAAAAA" }}>Maybe some other content</p>
+          />
+          <Line
+            type="monotone"
+            dataKey="distance"
+            stroke="#82ca9d"
+            fill="#82ca9d"
+            dot={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
 
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart
-            width={500}
-            height={200}
-            data={data}
-            syncId="anyId"
-            margin={{
-              top: 10,
-              right: 30,
-              left: 0,
-              bottom: 0,
-            }}
-          >
-            <CartesianGrid stroke="#444" />
-            <XAxis dataKey="name" stroke="#FFFFFF" />
-            <YAxis stroke="#FFFFFF" />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "#333",
-                border: "none",
-                borderRadius: "5px",
-                color: "#FFFFFF",
-              }}
-            />
-            <Line
-              type="monotone"
-              dataKey="pv"
-              stroke="#82ca9d"
-              fill="#82ca9d"
-            />
-            <Brush fill="#444" stroke="#8884d8" />
-          </LineChart>
-        </ResponsiveContainer>
+export default function Home() {
+  const [chartData, setChartData] = useState([]);
+  const socketRef = useRef(null);
 
-        <ResponsiveContainer width="100%" height={200}>
-          <AreaChart
-            width={500}
-            height={200}
-            data={data}
-            syncId="anyId"
-            margin={{
-              top: 10,
-              right: 30,
-              left: 0,
-              bottom: 0,
-            }}
-          >
-            <CartesianGrid stroke="#444" />
-            <XAxis dataKey="name" stroke="#FFFFFF" />
-            <YAxis stroke="#FFFFFF" />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "#333",
-                border: "none",
-                borderRadius: "5px",
-                color: "#FFFFFF",
-              }}
-            />
-            <Area
-              type="monotone"
-              dataKey="pv"
-              stroke="#82ca9d"
-              fill="#82ca9d"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-    );
-  }
+  useEffect(() => {
+    // Initialize WebSocket
+    socketRef.current = new WebSocket("ws://localhost:8000/ws/sensor-data/");
+    const socket = socketRef.current;
+
+    socket.onopen = () => {
+      console.log("WebSocket connected");
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const message = event.data; // e.g., "Distance: 15.10 cm"
+        const distanceMatch = message.match(/Distance:\s*([\d.]+)\s*cm/);
+        if (distanceMatch) {
+          const distance = parseFloat(distanceMatch[1]);
+          const timestamp = Date.now(); // Current timestamp
+
+          // Update chart data
+          setChartData((prevData) => [...prevData, { timestamp, distance }]);
+        }
+      } catch (error) {
+        console.error("Error parsing WebSocket message:", error);
+      }
+    };
+
+    socket.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+
+    socket.onclose = (event) => {
+      console.log(
+        `WebSocket disconnected: Code ${event.code}, Reason: ${event.reason}`
+      );
+    };
+
+    // Cleanup on unmount
+    return () => {
+      socket.close();
+    };
+  }, []);
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr",
+        gap: "20px",
+        padding: "20px",
+        backgroundColor: "#121212",
+        color: "#FFFFFF",
+      }}
+    >
+      <Example data={chartData} />
+    </div>
+  );
 }
