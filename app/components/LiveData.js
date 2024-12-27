@@ -56,7 +56,8 @@ function LiveData() {
 
   const sendCommand = () => {
     if (socketRef.current && inputValue.trim() !== "") {
-      socketRef.current.send(JSON.stringify({ command: inputValue }));
+      // prvent sending empty command using trim()
+      socketRef.current.send(JSON.stringify({ inputValue }));
       setMessages((prev) => [...prev, `Sent: ${inputValue}`]);
       setInputValue(""); // Clear input field
     }
