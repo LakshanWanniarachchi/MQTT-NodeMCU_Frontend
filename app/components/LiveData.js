@@ -11,7 +11,9 @@ function LiveData() {
 
   useEffect(() => {
     // Initialize WebSocket
-    socketRef.current = new WebSocket("ws://viralwavesmm.com//ws/sensor-data/");
+    socketRef.current = new WebSocket(
+      "wss://viralwavesmm.com//ws/sensor-data/"
+    );
 
     const socket = socketRef.current;
 
