@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+``;
 
 function LiveData() {
   const [messages, setMessages] = useState([]);
@@ -11,9 +12,7 @@ function LiveData() {
 
   useEffect(() => {
     // Initialize WebSocket
-    socketRef.current = new WebSocket(
-      "wss://viralwavesmm.com//ws/sensor-data/"
-    );
+    socketRef.current = new WebSocket("ws://localhost/ws/sensor-data/");
 
     const socket = socketRef.current;
 
